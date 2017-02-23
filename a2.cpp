@@ -13,11 +13,19 @@
 #include <string>
 #include <vector>
 #include <Sift.h>
+#include <fstream>
 
 //Use the cimg namespace to access the functions easily
 using namespace cimg_library;
 using namespace std;
 
+class point{
+	int hello(){
+	cout<<"hello";
+}
+}
+point a;
+a.hello();
 
 int main(int argc, char **argv)
 {
@@ -69,6 +77,13 @@ int main(int argc, char **argv)
       {
 	// do something here!
       }
+    else if(part == "part4"){
+	cout<<"rohil"<<endl;
+	std::ifstream input("b657-wars.txt");
+  	for(std::string line; getline(input, line);){
+    		cout<<line<<endl;
+  	}
+	}
     else
       throw std::string("unknown part!");
 
