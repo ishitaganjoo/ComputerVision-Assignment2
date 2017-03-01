@@ -15,6 +15,7 @@
 #include <Sift.h>
 #include <fstream>
 #include <cmath>
+#include "randPoints.h"
 
 //Use the cimg namespace to access the functions easily
 using namespace cimg_library;
@@ -60,23 +61,17 @@ int findNearestNeighbour(SiftDescriptor image1_singleDesc, vector<SiftDescriptor
 	return -1;
 }
 
-void findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize, vector<SiftDescriptor> matchedVector){
+void findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize){
 	const unsigned char color[] = {255, 0, 0};
-	int index = 0;
 	for(int i=0; i<imageDesc_1.size(); i++){
 		int indexNeighbor = findNearestNeighbour(imageDesc_1[i] , imageDesc_2);
 		cout<<"indexNeighbour"<<indexNeighbor<<endl;
 		if(indexNeighbor != -1)
 		{
-			cout<<"inside if"<<endl;
-			cout<<imageDesc_1[i].col<<endl;
-			cout<<matchedVector[0].col<<endl;
-			matchedVector[index].col = imageDesc_1[i].col;
-			matchedVector[index].row = imageDesc_1[i].row;
-			for(int l=0; l<128; l++){
-				matchedVector[index].descriptor[l] = imageDesc_1[i].descriptor[l];
-			}
-			index++;
+			//randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+			//randPoints obj;
+			//obj = randPoints(1,2,3,4);
+			//randomPoints.push_back(obj);
 			finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
 		}
 	}
@@ -136,9 +131,9 @@ int main(int argc, char **argv)
 
 				//cout<<desc1[0]<<endl;
 
-				vector<SiftDescriptor> matchedVector;
+				vector<randPoints> randomPoints;
 
-				findMatches(desc1, desc2, &finalImage, input_image.width(), matchedVector);
+				findMatches(desc1, desc2, &finalImage, input_image.width());
 
 				finalImage.get_normalize(0, 255).save("final_2.png");
 
@@ -196,9 +191,14 @@ int main(int argc, char **argv)
 
 				CImg<double> finalImage = (input_image.get_append(input_image_2, 'x')).get_normalize(0, 255);
 
-				vector<SiftDescriptor> matchedVector = vector<SiftDescriptor>();
-
-				findMatches(desc1, desc2, &finalImage, input_image.width(), matchedVector);
+				//float *floatVector;
+        			//vector<SiftDescriptor> matchedVector = SiftDescriptor((float)0.0, (float)0.0, (float)0.0, (float)0.0, floatVector);
+				
+				//vector<randPoints> randomPoints;
+				//for(int i=0; i<10; i++){
+				randPoints name  = randPoints(1,2,3,4);
+				
+				findMatches(desc1, desc2, &finalImage, input_image.width());
 
 				cout<<desc1.size()<<endl;
 
@@ -207,7 +207,6 @@ int main(int argc, char **argv)
 				int thirdRandDesc = rand() % desc1.size();
 				int fourthRandDesc = rand() % desc1.size();
 
-				cout<<firstRandDesc<<endl;
 	// do something here!
       }
     else if(part == "part3")
