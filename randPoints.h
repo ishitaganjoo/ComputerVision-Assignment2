@@ -5,12 +5,13 @@
 class randPoints{
 
 
-
 public:
-    static float _x;
-    static float _y;
-    static float _xP;
-    static float _yP;
+	
+    float _x;
+    float _y;
+    float _xP;
+    float _yP;
+
 randPoints() {
   }
 

@@ -61,17 +61,17 @@ int findNearestNeighbour(SiftDescriptor image1_singleDesc, vector<SiftDescriptor
 	return -1;
 }
 
-void findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize){
+void findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize, vector<randPoints>* randomPoints){
 	const unsigned char color[] = {255, 0, 0};
 	for(int i=0; i<imageDesc_1.size(); i++){
 		int indexNeighbor = findNearestNeighbour(imageDesc_1[i] , imageDesc_2);
 		cout<<"indexNeighbour"<<indexNeighbor<<endl;
 		if(indexNeighbor != -1)
 		{
-			//randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+			randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
 			//randPoints obj;
 			//obj = randPoints(1,2,3,4);
-			//randomPoints.push_back(obj);
+			randomPoints->push_back(obj);
 			finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
 		}
 	}
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 
 				vector<randPoints> randomPoints;
 
-				findMatches(desc1, desc2, &finalImage, input_image.width());
+				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints);
 
 				finalImage.get_normalize(0, 255).save("final_2.png");
 
@@ -191,21 +191,49 @@ int main(int argc, char **argv)
 
 				CImg<double> finalImage = (input_image.get_append(input_image_2, 'x')).get_normalize(0, 255);
 
-				//float *floatVector;
-        			//vector<SiftDescriptor> matchedVector = SiftDescriptor((float)0.0, (float)0.0, (float)0.0, (float)0.0, floatVector);
-				
-				//vector<randPoints> randomPoints;
-				//for(int i=0; i<10; i++){
-				randPoints name  = randPoints(1,2,3,4);
-				
-				findMatches(desc1, desc2, &finalImage, input_image.width());
+				vector<randPoints> randomPoints;
 
-				cout<<desc1.size()<<endl;
+				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints);
 
-				int firstRandDesc = rand() % desc1.size();
-				int secondRandDesc = rand() % desc1.size();
-				int thirdRandDesc = rand() % desc1.size();
-				int fourthRandDesc = rand() % desc1.size();
+				for(int i=0; i<1; i++)
+				{
+					int firstRandDesc = rand() % randomPoints.size();
+					int secondRandDesc = rand() % randomPoints.size();
+					int thirdRandDesc = rand() % randomPoints.size();
+					int fourthRandDesc = rand() % randomPoints.size();
+
+					//vector<float> vectorRows;
+					//vector<float> vectorCols;
+					//vector<vector<float> > array_2d(8, vector<float>(9, 0));
+					float x1 = randomPoints[firstRandDesc]._x;
+					float y1 = randomPoints[firstRandDesc]._y;
+					float x1P = randomPoints[firstRandDesc]._xP;
+					float y1P = randomPoints[firstRandDesc]._yP;
+				
+					float x2 = randomPoints[secondRandDesc]._x;
+					float y2 = randomPoints[secondRandDesc]._y;
+					float x2P = randomPoints[secondRandDesc]._xP;
+					float y2P = randomPoints[secondRandDesc]._yP;
+
+					float x3 = randomPoints[thirdRandDesc]._x;
+					float y3 = randomPoints[thirdRandDesc]._y;
+					float x3P = randomPoints[thirdRandDesc]._xP;
+					float y3P = randomPoints[thirdRandDesc]._yP;
+				
+					float x4 = randomPoints[fourthRandDesc]._x;
+					float y4 = randomPoints[fourthRandDesc]._y;
+					float x4P = randomPoints[fourthRandDesc]._xP;
+					float y4P = randomPoints[fourthRandDesc]._yP;
+					float array_2d[8][9] = {{-x1, -y1, -1, 0, 0, 0, x1*x1P, y1*x1P, x1P},
+						    {0, 0, 0, -x1, -y1, -1, x1*y1P, y1*y1P, y1P},
+						    {-x2, -y2, -1, 0, 0, 0, x2*x2P, y2*x2P, x2P},
+						    {0, 0, 0, -x2, -y2, -1, x2*y2P, y2*y2P, y2P},
+						    {-x3, -y3, -1, 0, 0, 0, x3*x3P, y3*x3P, x3P},
+						    {0, 0, 0, -x3, -y3, -1, x3*y3P, y3*y3P, y3P},
+						    {-x4, -y4, -1, 0, 0, 0, x4*x4P, y4*x4P, x4P},
+						    {0, 0, 0, -x4, -y4, -1, x4*y4P, y4*y4P, y4P}};
+					cout<<array_2d[0][0]<<"ishita"<<endl;
+			}
 
 	// do something here!
       }
