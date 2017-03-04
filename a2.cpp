@@ -100,6 +100,115 @@ vector<SiftDescriptor> calculateDescriptors(CImg<double> image, string inputFile
 		return descriptors;
 }
 
+void getCofactor(CImg<float> mat, CImg<float> temp, int p, int q, int n)
+{
+		int i = 0, j = 0;
+
+		// Looping for each element of the matrix
+		for (int row = 0; row < n; row++)
+		{
+				for (int col = 0; col < n; col++)
+				{
+						//  Copying into temporary matrix only those element
+						//  which are not in given row and column
+						if (row != p && col != q)
+						{
+								//temp[i][j++] = mat[row][col];
+								temp(i, j++) = mat(row, col);
+
+								// Row is filled, so increase row index and
+								// reset col index
+								if (j == n - 1)
+								{
+										j = 0;
+										i++;
+								}
+						}
+				}
+		}
+}
+
+int determinantOfMatrix(CImg<float> mat, int n)
+{
+		int D = 0; // Initialize result
+
+		// //  Base case : if matrix contains single element
+		 if (n == 1)
+		     return mat(0, 0);
+
+		//int temp[N][N]; // To store cofactors
+		CImg<float> temp(8,8);
+
+		int sign = 1;  // To store sign multiplier
+
+		 // Iterate for each element of first row
+		for (int f = 0; f < n; f++)
+		{
+				// Getting Cofactor of mat[0][f]
+				getCofactor(mat, temp, 0, f, n);
+				D += sign * mat(0, f) * determinantOfMatrix(temp, n - 1);
+
+				// terms are to be added with alternate sign
+				sign = -sign;
+		}
+
+		return D;
+}
+
+void adjoint(CImg<float> A, CImg<float> adj)
+{
+    // if (N == 1)
+    // {
+    //     adj(0, 0) = 1;
+    //     return;
+    // }
+
+    // temp is used to store cofactors of A[][]
+    int sign = 1;
+		CImg<float> temp;
+
+    for (int i=0; i<8; i++)
+    {
+        for (int j=0; j<8; j++)
+        {
+            // Get cofactor of A[i][j]
+            getCofactor(A, temp, i, j, 8);
+
+            // sign of adj[j][i] positive if sum of row
+            // and column indexes is even.
+            sign = ((i+j)%2==0)? 1: -1;
+
+            // Interchanging rows and columns to get the
+            // transpose of the cofactor matrix
+            adj(j, i) = (sign)*(determinantOfMatrix(temp, 7));
+        }
+    }
+}
+
+// Function to calculate and store inverse, returns false if
+// matrix is singular
+bool inverse(CImg<float> A, CImg<float> inverseMat)
+{
+    // Find determinant of A[][]
+    int det = determinantOfMatrix(A, 8);
+    if (det == 0)
+    {
+        cout << "Singular matrix, can't find its inverse";
+        return false;
+    }
+
+    // Find adjoint
+    CImg<float> adj(8, 8);
+    adjoint(A, adj);
+
+    // Find Inverse using formula "inverse(A) = adj(A)/det(A)"
+    for (int i=0; i<8; i++)
+        for (int j=0; j<8; j++)
+            inverseMat(i, j) = adj(i, j)/float(det);
+
+    return true;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -205,49 +314,212 @@ int main(int argc, char **argv)
 					//vector<float> vectorRows;
 					//vector<float> vectorCols;
 					//vector<vector<float> > array_2d(8, vector<float>(9, 0));
+
+					CImg<float> points(2, 4);
+					CImg<float> origTranslatedPoints(2, 4);
+
+					// float x1 = randomPoints[firstRandDesc]._x;
+					// float y1 = randomPoints[firstRandDesc]._y;
+					// float x1P = randomPoints[firstRandDesc]._xP;
+					// float y1P = randomPoints[firstRandDesc]._yP;
+					//
+					// float x2 = randomPoints[secondRandDesc]._x;
+					// float y2 = randomPoints[secondRandDesc]._y;
+					// float x2P = randomPoints[secondRandDesc]._xP;
+					// float y2P = randomPoints[secondRandDesc]._yP;
+					//
+					// float x3 = randomPoints[thirdRandDesc]._x;
+					// float y3 = randomPoints[thirdRandDesc]._y;
+					// float x3P = randomPoints[thirdRandDesc]._xP;
+					// float y3P = randomPoints[thirdRandDesc]._yP;
+					//
+					// float x4 = randomPoints[fourthRandDesc]._x;
+					// float y4 = randomPoints[fourthRandDesc]._y;
+					// float x4P = randomPoints[fourthRandDesc]._xP;
+					// float y4P = randomPoints[fourthRandDesc]._yP;
+
 					float x1 = randomPoints[firstRandDesc]._x;
+					points(0, 0) = randomPoints[firstRandDesc]._x;
 					float y1 = randomPoints[firstRandDesc]._y;
+					points(1, 0) = randomPoints[firstRandDesc]._y;
 					float x1P = randomPoints[firstRandDesc]._xP;
+					origTranslatedPoints(0, 0) = randomPoints[firstRandDesc]._xP;
 					float y1P = randomPoints[firstRandDesc]._yP;
-				
+					origTranslatedPoints(1, 0) = randomPoints[firstRandDesc]._yP;
+
 					float x2 = randomPoints[secondRandDesc]._x;
+					points(0, 1) = randomPoints[secondRandDesc]._x;
 					float y2 = randomPoints[secondRandDesc]._y;
+					points(1, 1) = randomPoints[secondRandDesc]._y;
 					float x2P = randomPoints[secondRandDesc]._xP;
+					origTranslatedPoints(0, 1) = randomPoints[secondRandDesc]._xP;
 					float y2P = randomPoints[secondRandDesc]._yP;
+					origTranslatedPoints(1, 1) = randomPoints[secondRandDesc]._yP;
 
 					float x3 = randomPoints[thirdRandDesc]._x;
+					points(0, 2) = randomPoints[thirdRandDesc]._x;
 					float y3 = randomPoints[thirdRandDesc]._y;
+					points(1, 2) = randomPoints[thirdRandDesc]._y;
 					float x3P = randomPoints[thirdRandDesc]._xP;
+					origTranslatedPoints(0, 2) = randomPoints[thirdRandDesc]._xP;
 					float y3P = randomPoints[thirdRandDesc]._yP;
-				
-					float x4 = randomPoints[fourthRandDesc]._x;
-					float y4 = randomPoints[fourthRandDesc]._y;
-					float x4P = randomPoints[fourthRandDesc]._xP;
-					float y4P = randomPoints[fourthRandDesc]._yP;
-					float array_2d[8][9] = {{-x1, -y1, -1, 0, 0, 0, x1*x1P, y1*x1P, x1P},
-						    {0, 0, 0, -x1, -y1, -1, x1*y1P, y1*y1P, y1P},
-						    {-x2, -y2, -1, 0, 0, 0, x2*x2P, y2*x2P, x2P},
-						    {0, 0, 0, -x2, -y2, -1, x2*y2P, y2*y2P, y2P},
-						    {-x3, -y3, -1, 0, 0, 0, x3*x3P, y3*x3P, x3P},
-						    {0, 0, 0, -x3, -y3, -1, x3*y3P, y3*y3P, y3P},
-						    {-x4, -y4, -1, 0, 0, 0, x4*x4P, y4*x4P, x4P},
-						    {0, 0, 0, -x4, -y4, -1, x4*y4P, y4*y4P, y4P}};
-					cout<<array_2d[0][0]<<"ishita"<<endl;
-			}
+					origTranslatedPoints(1, 2) = randomPoints[thirdRandDesc]._yP;
 
-	// do something here!
+					float x4 = randomPoints[fourthRandDesc]._x;
+					points(0, 3) = randomPoints[fourthRandDesc]._x;
+					float y4 = randomPoints[fourthRandDesc]._y;
+					points(1, 3) = randomPoints[fourthRandDesc]._y;
+					float x4P = randomPoints[fourthRandDesc]._xP;
+					origTranslatedPoints(0, 3) = randomPoints[fourthRandDesc]._xP;
+					float y4P = randomPoints[fourthRandDesc]._yP;
+					origTranslatedPoints(1, 3) = randomPoints[fourthRandDesc]._yP;
+
+					CImg<float> array_2d(8,8);
+					for(int i=0; i<8; i++){
+						for(int j=0; j<8; j++){
+							if(i % 2 == 0){
+								if(j == 3 || j == 4 || j == 5){
+									array_2d(i, j) = 0;
+								}
+								if(j == 2){
+									array_2d(i, j) = 1;
+								}
+							}
+							if(i % 2 != 0){
+								if(j == 0 || j == 1 || j == 2){
+									array_2d(i, j) = 0;
+								}
+								if(j == 5){
+									array_2d(i, j) = 1;
+								}
+							}
+						}
+					}
+					array_2d(0,0) = x1;
+					array_2d(0, 1) = y1;
+					array_2d(0, 6) = -(x1*x1P);
+					array_2d(0, 7) = -(y1*x1P);
+					array_2d(1, 3) = x1;
+					array_2d(1, 4) = y1;
+					array_2d(1, 6) = -(x1*y1P);
+					array_2d(1, 7) = -(y1*y1P);
+
+					array_2d(2,0) = x2;
+					array_2d(2, 1) = y2;
+					array_2d(2, 6) = -(x2*x2P);
+					array_2d(2, 7) = -(y2*x2P);
+					array_2d(3, 3) = x2;
+					array_2d(3, 4) = y2;
+					array_2d(3, 6) = -(x2*y2P);
+					array_2d(3, 7) = -(y2*y2P);
+
+					array_2d(4,0) = x3;
+					array_2d(4, 1) = y3;
+					array_2d(4, 6) = -(x3*x3P);
+					array_2d(4, 7) = -(y3*x3P);
+					array_2d(5, 3) = x3;
+					array_2d(5, 4) = y3;
+					array_2d(5, 6) = -(x3*y3P);
+					array_2d(5, 7) = -(y3*y3P);
+
+					array_2d(6,0) = x4;
+					array_2d(6, 1) = y4;
+					array_2d(6, 6) = -(x4*x4P);
+					array_2d(6, 7) = -(y4*x4P);
+					array_2d(7, 3) = x4;
+					array_2d(7, 4) = y4;
+					array_2d(7, 6) = -(x4*y4P);
+					array_2d(7, 7) = -(y4*y4P);
+
+					//float d = determinantOfMatrix(array_2d, 8);
+					CImg<float> inverseMat(8, 8);
+					//inverse(array_2d, inverseMat);
+					//cout<<"inverse mat"<<inverseMat(0,0)<<endl;
+					inverseMat = array_2d.invert();
+					cout<<inverseMat(0,0)<<"invert"<<endl;
+
+						//	{{-x1, -y1, -1, 0, 0, 0, x1*x1P, y1*x1P, x1P},
+						  //  {0, 0, 0, -x1, -y1, -1, x1*y1P, y1*y1P, y1P},
+						   // {-x2, -y2, -1, 0, 0, 0, x2*x2P, y2*x2P, x2P},
+						   // {0, 0, 0, -x2, -y2, -1, x2*y2P, y2*y2P, y2P},
+						   // {-x3, -y3, -1, 0, 0, 0, x3*x3P, y3*x3P, x3P},
+						   // {0, 0, 0, -x3, -y3, -1, x3*y3P, y3*y3P, y3P},
+						   // {-x4, -y4, -1, 0, 0, 0, x4*x4P, y4*x4P, x4P},
+						   // {0, 0, 0, -x4, -y4, -1, x4*y4P, y4*y4P, y4P}};
+					//CImg<float> array_2d(8,9);
+					//array_2d = {[-x1, -y1, -1, 0, 0, 0, x1*x1P, y1*x1P, x1P],
+					//	    [0, 0, 0, -x1, -y1, -1, x1*y1P, y1*y1P, y1P],
+					//	    [-x2, -y2, -1, 0, 0, 0, x2*x2P, y2*x2P, x2P],
+					//	    [0, 0, 0, -x2, -y2, -1, x2*y2P, y2*y2P, y2P],
+					//	    [-x3, -y3, -1, 0, 0, 0, x3*x3P, y3*x3P, x3P],
+					//	    [0, 0, 0, -x3, -y3, -1, x3*y3P, y3*y3P, y3P],
+					//	    [-x4, -y4, -1, 0, 0, 0, x4*x4P, y4*x4P, x4P],
+					//	    [0, 0, 0, -x4, -y4, -1, x4*y4P, y4*y4P, y4P]};
+
+					vector<float> transCoord(8);
+					transCoord[0] = x1P;
+					transCoord[1] = y1P;
+					transCoord[2] = x2P;
+					transCoord[3] = y2P;
+					transCoord[4] = x3P;
+					transCoord[5] = y3P;
+					transCoord[6] = x4P;
+					transCoord[7] = y4P;
+
+					vector<float> homography(9);
+					for(int i=0; i<inverseMat.height(); i++){
+						for(int j=0; j<inverseMat.width(); j++){
+							homography[i] += inverseMat(i, j) * transCoord[j];
+						}
+					}
+					homography[8] = 1;
+					for(int i=0; i<homography.size(); i++){
+						cout<<"rohil "<<homography[i]<<endl;
+					}
+					CImg<float> homographyMatrix(3,3);
+					int index = 0;
+					for(int i=0; i<3; i++){
+						for(int j=0; j<3; j++){
+							homographyMatrix(i, j) = homography[index];
+							index++;
+						}
+					}
+					CImg<float> translatedCoord(2, 4);
+
+					int pointIndex = 0;
+
+					while(pointIndex < 4){
+						translatedCoord(0, pointIndex) = homographyMatrix(0, 0)*points(0,pointIndex) + homographyMatrix(0, 1)*points(1, pointIndex) + homographyMatrix(0, 2);
+						translatedCoord(1, pointIndex) = homographyMatrix(1, 0)*points(0, pointIndex) + homographyMatrix(1, 1)*points(1, pointIndex) + homographyMatrix(1, 2);
+						pointIndex++;
+					}
+
+					// float imageCoordX = homographyMatrix(0,0)*x1 + homographyMatrix(0,1)*y1 + homographyMatrix(0, 2);
+					// float imageCoordY = homographyMatrix(1,0)*x1 + homographyMatrix(1,1)*y1 + homographyMatrix(1, 2);
+					cout<<"original "<<x1P<<endl;
+					cout<<"tr "<<translatedCoord(0, 0)<<endl;
+					cout<<"original "<<y1P<<endl;
+					cout<<"tr "<<translatedCoord(1, 0)<<endl;
+					cout<<"original "<<x2P<<endl;
+					cout<<"tr "<<translatedCoord(0, 1)<<endl;
+					cout<<"original "<<y2P<<endl;
+					cout<<"tr "<<translatedCoord(1, 1)<<endl;
+
+					double errorDistance = 0.0;
+					pointIndex = 0;
+					while(pointIndex < 4){
+						errorDistance += sqrt(pow(translatedCoord(0, pointIndex) - origTranslatedPoints(0, pointIndex),2) - pow(translatedCoord(1,pointIndex) - origTranslatedPoints(1, pointIndex),2));
+						pointIndex++;
+					}
+					cout<<"errorDist"<<errorDistance<<endl;
+
+
+			}
       }
     else if(part == "part3")
       {
 	// do something here!
       }
-    else if(part == "part4"){
-	cout<<"rohil"<<endl;
-	std::ifstream input("b657-wars.txt");
-  	for(std::string line; getline(input, line);){
-    		cout<<line<<endl;
-  	}
-	}
     else
       throw std::string("unknown part!");
 
