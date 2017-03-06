@@ -16,40 +16,11 @@
 #include <fstream>
 #include <cmath>
 #include <map>
-#include <cstdlib>
-#include <limits>
 #include "randPoints.h"
-#define kSize 3
 
 //Use the cimg namespace to access the functions easily
 using namespace cimg_library;
 using namespace std;
-
-double generateGaussianNoise(double mu, double sigma)
-{
-	srand(time(NULL));
-	const double epsilon = std::numeric_limits<double>::min();
-	const double two_pi = 2.0*3.14159265358979323846;
-
-	static double z0, z1;
-	static bool generate;
-	generate = !generate;
-
-	if (!generate)
-	   return z1 * sigma + mu;
-
-	double u1, u2;
-	do
-	 {
-	   u1 = rand() * (1.0 / RAND_MAX);
-	   u2 = rand() * (1.0 / RAND_MAX);
-	 }
-	while ( u1 <= epsilon );
-
-	z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
-	z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
-	return z0 * sigma + mu;
-}
 
 double euclideanDistance(SiftDescriptor image1_singleDesc, SiftDescriptor image2_singleDesc){
 	double finalMagnitude = 0.0;
@@ -62,7 +33,7 @@ double euclideanDistance(SiftDescriptor image1_singleDesc, SiftDescriptor image2
 int findNearestNeighbour(SiftDescriptor image1_singleDesc, vector<SiftDescriptor> imageDesc_2){
 	double minDist = 1e6;
 	double secondMin = 1e6;
-	double threshold = 0.75;
+	double threshold = 0.79;
 	int neighborIndex = -1;
 	for(int i=0; i<imageDesc_2.size(); i++){
 		double distance = euclideanDistance(image1_singleDesc, imageDesc_2[i]);
@@ -80,36 +51,31 @@ int findNearestNeighbour(SiftDescriptor image1_singleDesc, vector<SiftDescriptor
 
 	}
 	double ratio = minDist / secondMin;
-	//cout<<"ratio"<<ratio<<endl;
-	//cout<<"neighbor index"<<neighborIndex;
+	cout<<"ratio"<<ratio<<endl;
+	cout<<"neighbor index"<<neighborIndex;
 	if(ratio < threshold)
 	{
-		//cout<<"threshold"<<threshold<<endl;
-		//cout<<"ratio inside"<<ratio<<endl;
+		cout<<"threshold"<<threshold<<endl;
+		cout<<"ratio inside"<<ratio<<endl;
 		return neighborIndex;
 	}
 	return -1;
 }
 
-int findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize, vector<randPoints>* randomPoints,int countNoOfMatches, bool checkFlow){
+void findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> imageDesc_2, CImg<double>* finalImage, double imageSize, vector<randPoints>* randomPoints){
 	const unsigned char color[] = {255, 0, 0};
 	for(int i=0; i<imageDesc_1.size(); i++){
 		int indexNeighbor = findNearestNeighbour(imageDesc_1[i] , imageDesc_2);
-		//cout<<"indexNeighbour"<<indexNeighbor<<endl;
+		cout<<"indexNeighbour"<<indexNeighbor<<endl;
 		if(indexNeighbor != -1)
 		{
-			countNoOfMatches++;
-			if(!checkFlow)
-                        {
-                         randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+			randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
 			//randPoints obj;
 			//obj = randPoints(1,2,3,4);
 			randomPoints->push_back(obj);
-			//finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
-			}
+			finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
 		}
 	}
-	return countNoOfMatches;
 }
 
 vector<SiftDescriptor> calculateDescriptors(CImg<double> image, string inputFileName){
@@ -118,10 +84,10 @@ vector<SiftDescriptor> calculateDescriptors(CImg<double> image, string inputFile
 
 	for(int i=0; i<descriptors.size(); i++)
 		{
-			//cout << "Descriptor #" << i << ": x=" << descriptors[i].col << " y=" << descriptors[i].row << " descriptor=(";
-			//for(int l=0; l<128; l++)
-			//	cout << descriptors[i].descriptor[l] << "," ;
-			//cout << ")" << endl;
+			cout << "Descriptor #" << i << ": x=" << descriptors[i].col << " y=" << descriptors[i].row << " descriptor=(";
+			for(int l=0; l<128; l++)
+				cout << descriptors[i].descriptor[l] << "," ;
+			cout << ")" << endl;
 
 			for(int j=0; j<5; j++)
 				for(int k=0; k<5; k++)
@@ -133,51 +99,6 @@ vector<SiftDescriptor> calculateDescriptors(CImg<double> image, string inputFile
 		string fileName = "sift"+inputFileName+".png";
 		image.get_normalize(0, 255).save(fileName.c_str());
 		return descriptors;
-}
-
-//Question1 part2
-int findBestMatchForImage(vector<SiftDescriptor> queryImage, vector<SiftDescriptor> inputImage, CImg<double>* finalImage, double imageSize, vector<randPoints>* randomPoints)
-{
-    int countNoOfMatches = 0;
-    countNoOfMatches = findMatches(queryImage, inputImage, finalImage, imageSize, randomPoints, countNoOfMatches,true);
-    //cout<<"inside bestMatches"<<countNoOfMatches<<endl;
-    return countNoOfMatches;
-}
-
-vector<float> calculateHeuristicVector(SiftDescriptor desc){
-
-	vector<float> fV(kSize);
-	vector<float> x(128);
-
-	//TODO generate X vector 128D from gaussian distribution
-
-	for(int i=0; i<kSize; i++){
-		for(int k=0; k<128; k++){
-			fV[i] += desc.descriptor[k]*x[k];
-		}
-	}
-
-	return fV;
-}
-
-void matchHeuristicVectors(vector<float> heuristicImage1, SiftDescriptor image1128D, vector<SiftDescriptor> image2Desc){
-	for(int i=0; i<image2Desc.size(); i++){
-		vector<float> image2Heuristic = calculateHeuristicVector(image2Desc[i]);
-
-		int count  = 0;
-		for(int j=0; j<kSize; j++){
-			if(heuristicImage1[j] == image2Heuristic[j]){
-				count++;
-			}
-			else{
-				count--;
-			}
-		}
-		if(count == 3){
-			double score = euclideanDistance(image1128D, image2Desc[i]);
-		}
-
-	}
 }
 
 
@@ -196,7 +117,7 @@ int main(int argc, char **argv)
     string inputFile = argv[2];
 		string inputFile_2 = argv[3];
 
-    if(part == "part1" && argc == 4)
+    if(part == "part1")
       {
 				// This is just a bit of sample code to get you started, to
 				// show how to use the SIFT library.
@@ -213,60 +134,58 @@ int main(int argc, char **argv)
 
 				vector<randPoints> randomPoints;
 
-				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints, 0, false);
+				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints);
 
 				finalImage.get_normalize(0, 255).save("final_2.png");
 
+				// // convert image to grayscale
+				// CImg<double> gray = input_image.get_RGBtoHSI().get_channel(2);
+				// 	vector<SiftDescriptor> descriptors = Sift::compute_sift(gray);
+				//
+				// for(int i=0; i<descriptors.size(); i++)
+				//   {
+				//     cout << "Descriptor #" << i << ": x=" << descriptors[i].col << " y=" << descriptors[i].row << " descriptor=(";
+				//     for(int l=0; l<128; l++)
+				//       cout << descriptors[i].descriptor[l] << "," ;
+				//     cout << ")" << endl;
+				//
+				//     for(int j=0; j<5; j++)
+				//       for(int k=0; k<5; k++)
+				// 	if(j==2 || k==2)
+				// 	  for(int p=0; p<3; p++)
+				// 	    input_image(descriptors[i].col+k-1, descriptors[i].row+j-1, 0, p)=0;
+				//
+				//   }
+				//
+				// 	CImg<double> input_image_2(inputFile_2.c_str());
+				// 	CImg<double> gray_2 = input_image_2.get_RGBtoHSI().get_channel(2);
+				//
+				// 	vector<SiftDescriptor> descriptors_2 = Sift::compute_sift(gray_2);
+				//
+				// 	for(int i=0; i<descriptors_2.size(); i++)
+				// 		{
+				// 			cout << "Descriptor #" << i << ": x=" << descriptors_2[i].col << " y=" << descriptors[i]_2.row << " descriptor=(";
+				// 			for(int l=0; l<128; l++)
+				// 				cout << descriptors_2[i].descriptor[l] << "," ;
+				// 			cout << ")" << endl;
+				//
+				// 			for(int j=0; j<5; j++)
+				// 				for(int k=0; k<5; k++)
+				// 		if(j==2 || k==2)
+				// 			for(int p=0; p<3; p++)
+				// 				input_image_2(descriptors_2[i].col+k-1, descriptors_2[i].row+j-1, 0, p)=0;
+				//
+				// 		}
+				//
+				//
+				// 	input_image_2.get_normalize(0, 255).save("sift_2.png");
+				//
+				// input_image.get_normalize(0,255).save("sift.png");
       }
-			else if(part == "part1" && argc > 4)
-			{
-
-					//create a map
-					map<int,string> countMap;
-					map<int,string>::const_iterator it;
-					map<int,string>::const_iterator it1;
-					int length = argc-3 ; //length of args
-					string inputFile_1 = argv[2];
-					CImg<double> query_image(inputFile_1.c_str());
-					cout<<length<<"length is"<<endl;
-					vector<SiftDescriptor> desc1 = calculateDescriptors(query_image, "A");
-
-					//start the for loop
-					for(int i = 0; i < length; i++)
-					{
-					string inputFile_match = argv[i+3];
-					CImg<double> input_image_2(inputFile_match.c_str());
-
-					CImg<double> finalImage = (query_image.get_append(input_image_2, 'x')).get_normalize(0, 255);
-
-
-					vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
-
-					vector<randPoints> randomPoints;
-					int count=0;
-					count = findBestMatchForImage(desc1, desc2, &finalImage, query_image.width(), &randomPoints);
-
-					countMap[count] =  argv[i+3]; //name of file;
-
-					it = countMap.end();
-					it--;
-					it1 = countMap.begin();
-					it1--;
-					for(it; it!=it1; it--)
-					{
-							cout<<"count order is"<<it->first<<endl;
-							cout<<"image order is"<<it->second<<endl;
-					}
-
-			}
-		}
     else if(part == "part2")
       {
-
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
-
-				double size = input_image.width();
 
 				vector<SiftDescriptor> desc1 = calculateDescriptors(input_image, "A");
 				vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
@@ -275,28 +194,20 @@ int main(int argc, char **argv)
 
 				vector<randPoints> randomPoints;
 
-				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints, 0, false);
+				findMatches(desc1, desc2, &finalImage, input_image.width(), &randomPoints);
 
-				//map<double, vector<float> > errorCal;
-				CImg<float> points(2, 4);
-
-				double minErrorDist = 100000000.0;
-				CImg<float> minHomographyMatrix(3,3);
-				for(int i = 0 ; i < 3; i++)
-				{
-					for(int j = 0; j < 3; j++)
-					{
-						minHomographyMatrix(i,j) = 0.0;
-					}
-
-				}
-				for(int i=0 ; i<2000 ; i++)
+				for(int i=0; i<1; i++)
 				{
 					int firstRandDesc = rand() % randomPoints.size();
 					int secondRandDesc = rand() % randomPoints.size();
 					int thirdRandDesc = rand() % randomPoints.size();
 					int fourthRandDesc = rand() % randomPoints.size();
 
+					//vector<float> vectorRows;
+					//vector<float> vectorCols;
+					//vector<vector<float> > array_2d(8, vector<float>(9, 0));
+
+					CImg<float> points(2, 4);
 					CImg<float> origTranslatedPoints(2, 4);
 
 					float x1 = randomPoints[firstRandDesc]._x;
@@ -410,27 +321,16 @@ int main(int argc, char **argv)
 					transCoord[7] = y4P;
 
 					vector<float> homography(9);
-					for(int i = 0 ; i < 9; i++)
-					{
-						homography[i] = 0.0;
-					}
-
 					for(int i=0; i<inverseMat.height(); i++){
 						for(int j=0; j<inverseMat.width(); j++){
 							homography[i] += inverseMat(i, j) * transCoord[j];
 						}
 					}
 					homography[8] = 1;
-
-					CImg<float> homographyMatrix(3,3);
-					for(int i = 0 ; i < 3; i++)
-					{
-						for(int j = 0; j < 3; j++)
-						{
-							homographyMatrix(i,j) = 0.0;
-						}
-
+					for(int i=0; i<homography.size(); i++){
+						cout<<"rohil "<<homography[i]<<endl;
 					}
+					CImg<float> homographyMatrix(3,3);
 					int index = 0;
 					for(int i=0; i<3; i++){
 						for(int j=0; j<3; j++){
@@ -448,73 +348,30 @@ int main(int argc, char **argv)
 						pointIndex++;
 					}
 
-					double errorDistance = 0.0;
+					// float imageCoordX = homographyMatrix(0,0)*x1 + homographyMatrix(0,1)*y1 + homographyMatrix(0, 2);
+					// float imageCoordY = homographyMatrix(1,0)*x1 + homographyMatrix(1,1)*y1 + homographyMatrix(1, 2);
+					cout<<"original "<<x1P<<endl;
+					cout<<"tr "<<translatedCoord(0, 0)<<endl;
+					cout<<"original "<<y1P<<endl;
+					cout<<"tr "<<translatedCoord(1, 0)<<endl;
+					cout<<"original "<<x2P<<endl;
+					cout<<"tr "<<translatedCoord(0, 1)<<endl;
+					cout<<"original "<<y2P<<endl;
+					cout<<"tr "<<translatedCoord(1, 1)<<endl;
 
+					map<double, string > errorCal();
+
+					double errorDistance = 0.0;
 					pointIndex = 0;
 					while(pointIndex < 4){
 						errorDistance += sqrt(pow(translatedCoord(0, pointIndex) - origTranslatedPoints(0, pointIndex),2) + pow(translatedCoord(1,pointIndex) - origTranslatedPoints(1, pointIndex),2));
 						pointIndex++;
 					}
 					cout<<"errorDist"<<errorDistance<<endl;
-					//errorCal[errorDistance] = homography;
-					if(errorDistance < minErrorDist)
-					{
-						minErrorDist = errorDistance;
-						minHomographyMatrix = homographyMatrix ;
-					}
+
+
 			}
-
-			cout<<minErrorDist<<" min error"<<endl;
-
-			for(int i=0; i<3; i++){
-				for(int j=0; j<3; j++){
-					cout<<minHomographyMatrix(i, j)<<endl;
-				}
-
-			CImg<float> finalTranslatedCoord(2, randomPoints.size());
-
-			int pointIndex = 0;
-
-			const unsigned char color[] = {255, 0, 0};
-
-
-			while(pointIndex < randomPoints.size()){
-				finalTranslatedCoord(0, pointIndex) = minHomographyMatrix(0, 0)*randomPoints[pointIndex]._x + minHomographyMatrix(0, 1)*randomPoints[pointIndex]._y + minHomographyMatrix(0, 2);
-				finalTranslatedCoord(1, pointIndex) = minHomographyMatrix(1, 0)*randomPoints[pointIndex]._x + minHomographyMatrix(1, 1)*randomPoints[pointIndex]._y + minHomographyMatrix(1, 2);
-				finalImage.draw_line(randomPoints[pointIndex]._x , randomPoints[pointIndex]._y, finalTranslatedCoord(0, pointIndex)+size, finalTranslatedCoord(1, pointIndex), color);
-				pointIndex++;
-			}
-
-			finalImage.get_normalize(0, 255).save("final_part2.png");
-
-
       }
-}
-			else if(part == "rohil"){
-
-				CImg<double> input_image(inputFile.c_str());
-				CImg<double> input_image_2(inputFile_2.c_str());
-
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-
-				vector<SiftDescriptor> desc1 = calculateDescriptors(input_image, "A");
-				vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
-
-				for(int i=0; i<desc1.size(); i++){
-					vector<float> heuristicVec = calculateHeuristicVector(desc1[i]);
-					matchHeuristicVectors(heuristicVec, desc1[i], desc2);
-				}
-
-
-
-			}
     else if(part == "part3")
       {
 	// do something here!
