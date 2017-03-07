@@ -18,38 +18,14 @@
 #include <map>
 #include <cstdlib>
 #include <limits>
+#include <random>
 #include "randPoints.h"
-#define kSize 3
+#define kSize 28
+#define wScalar 6
 
 //Use the cimg namespace to access the functions easily
 using namespace cimg_library;
 using namespace std;
-
-double generateGaussianNoise(double mu, double sigma)
-{
-	srand(time(NULL));
-	const double epsilon = std::numeric_limits<double>::min();
-	const double two_pi = 2.0*3.14159265358979323846;
-
-	static double z0, z1;
-	static bool generate;
-	generate = !generate;
-
-	if (!generate)
-	   return z1 * sigma + mu;
-
-	double u1, u2;
-	do
-	 {
-	   u1 = rand() * (1.0 / RAND_MAX);
-	   u2 = rand() * (1.0 / RAND_MAX);
-	 }
-	while ( u1 <= epsilon );
-
-	z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
-	z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
-	return z0 * sigma + mu;
-}
 
 double euclideanDistance(SiftDescriptor image1_singleDesc, SiftDescriptor image2_singleDesc){
 	double finalMagnitude = 0.0;
@@ -100,8 +76,8 @@ int findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> image
 		{
 			countNoOfMatches++;
 			if(!checkFlow)
-                        {
-                         randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+      {
+       randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
 			//randPoints obj;
 			//obj = randPoints(1,2,3,4);
 			randomPoints->push_back(obj);
@@ -144,45 +120,76 @@ int findBestMatchForImage(vector<SiftDescriptor> queryImage, vector<SiftDescript
     return countNoOfMatches;
 }
 
-vector<float> calculateHeuristicVector(SiftDescriptor desc){
+vector<float> calculateHeuristicVector(SiftDescriptor desc, default_random_engine generator){
 
 	vector<float> fV(kSize);
 	vector<float> x(128);
 
-	//TODO generate X vector 128D from gaussian distribution
+	normal_distribution<double> distribution(0.0, 1.0);
+
     for(int j = 0; j < 128; j++){
-        x[j] = generateGaussianNoise(0.0, 1.0);
+        x[j] = distribution(generator);
     }
 	for(int i=0; i<kSize; i++){
 		for(int k=0; k<128; k++){
 			fV[i] += desc.descriptor[k]*x[k];
+			fV[i] = floor(fV[i] / wScalar);
 		}
 	}
 
 	return fV;
 }
 
-void matchHeuristicVectors(vector<float> heuristicImage1, SiftDescriptor image1128D, vector<SiftDescriptor> image2Desc){
-	for(int i=0; i<image2Desc.size(); i++){
-		vector<float> image2Heuristic = calculateHeuristicVector(image2Desc[i]);
-
-		int count  = 0;
-		for(int j=0; j<kSize; j++){
-			if(heuristicImage1[j] == image2Heuristic[j]){
+void matchHeuristicVectors(vector<float> heuristicImage1, SiftDescriptor image1128D, vector< vector<float> > heuristicAllImage2, vector<SiftDescriptor> image2128D, CImg<double>* finalImage, double imageSize){
+	int newCount = 0;
+	double minDist = 1e6;
+	double secondMin = 1e6;
+	double threshold = 0.75;
+	int neighborIndex = -1;
+	for(int i=0; i<heuristicAllImage2.size(); i++){
+		double distance = 100000;
+		int count = 0;
+		for(int k=0; k<kSize; k++){
+			if(heuristicImage1[k] == heuristicAllImage2[i][k]){
 				count++;
 			}
 			else{
 				count--;
 			}
 		}
-		if(count == 3){
-			double score = euclideanDistance(image1128D, image2Desc[i]);
-		}
+		if(count == kSize){
+			distance = euclideanDistance(image1128D, image2128D[i]);
 
+			if(distance<minDist)
+			{
+				secondMin = minDist;
+				minDist = distance;
+				neighborIndex = i;
+			}
+			else if(distance<secondMin)
+			{
+				secondMin = distance;
+			}
+		}
+	}
+	double ratio = minDist / secondMin;
+	if(ratio < threshold)
+	{
+		if(neighborIndex != -1)
+		{
+
+			//  randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+			// //randPoints obj;
+			// //obj = randPoints(1,2,3,4);
+			// randomPoints->push_back(obj);
+			const unsigned char color[] = {255, 0, 0};
+			finalImage->draw_line(image1128D.col , image1128D.row, image2128D[neighborIndex].col+imageSize, image2128D[neighborIndex].row, color);
+		}
 	}
 }
+
 CImg<double> getInverseTransformMatrix()
-{   CImg<double> inverseTransform(3, 3);    
+{   CImg<double> inverseTransform(3, 3);
 		inverseTransform(0, 0) = 0.907;
 		inverseTransform(0, 1) = 0.258;
 		inverseTransform(0, 2) =  -182;
@@ -503,29 +510,34 @@ int main(int argc, char **argv)
 
 
       }
-<<<<<<< HEAD
 }
 			else if(part == "rohil"){
 
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
 
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
-				cout<<generateGaussianNoise(0.0, 1.0)<<endl;
+				CImg<double> finalImage = (input_image.get_append(input_image_2, 'x')).get_normalize(0, 255);
 
 				vector<SiftDescriptor> desc1 = calculateDescriptors(input_image, "A");
 				vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
 
+				vector< vector<float> > heuristicVecImage1(desc1.size());
+				vector< vector<float> > heuristicVecImage2(desc2.size());
+
 				for(int i=0; i<desc1.size(); i++){
-					vector<float> heuristicVec = calculateHeuristicVector(desc1[i]);
-					matchHeuristicVectors(heuristicVec, desc1[i], desc2);
+					default_random_engine generator(time(0));
+					heuristicVecImage1[i] = calculateHeuristicVector(desc1[i], generator);
+					//matchHeuristicVectors(heuristicVec, desc1[i], desc2);
 				}
+				for(int i=0; i<desc2.size(); i++){
+					default_random_engine generator(time(0));
+					heuristicVecImage2[i] = calculateHeuristicVector(desc2[i], generator);
+				}
+
+				for(int i=0; i<heuristicVecImage1.size(); i++){
+					matchHeuristicVectors(heuristicVecImage1[i], desc1[i], heuristicVecImage2, desc2, &finalImage, input_image.width());
+				}
+				finalImage.get_normalize(0, 255).save("final_part2_2.png");
 
 
 
@@ -536,15 +548,15 @@ int main(int argc, char **argv)
 	  		CImg<float> input_image(inputFile.c_str());
 			int height = input_image.height();
 			int width = input_image.width();
-			CImg<double> output_image(width, height, 1, 3, 0.0); 
-			CImg<double> inverseTransform(3, 3); 
+			CImg<double> output_image(width, height, 1, 3, 0.0);
+			CImg<double> inverseTransform(3, 3);
 			inverseTransform = getInverseTransformMatrix();
-			CImg<double> inverted(3, 3); 
+			CImg<double> inverted(3, 3);
 			inverted = inverseTransform.invert();
 			for (int i = 0; i < width; i++)
-				{  
+				{
 				for (int j = 0; j < height; j++)
-					{		
+					{
 						double x = inverted(0, 0) * i + inverted(0, 1) * j + inverted(0, 2);
 						double y = inverted(1, 0) * i + inverted(1, 1) * j + inverted(1, 2);
 						double z = inverted(2, 0) * i + inverted(2, 1) * j + inverted(2, 2);
@@ -552,7 +564,7 @@ int main(int argc, char **argv)
 							x /= z;
 							y /= z;
 			  				   }
-						if (x>=0 && x<width && y>=0 && y<height) 
+						if (x>=0 && x<width && y>=0 && y<height)
 	  						{
 							output_image(i, j, 0) = input_image(x, y, 0);
 							output_image(i, j, 1) = input_image(x, y, 1);
@@ -566,14 +578,10 @@ int main(int argc, char **argv)
 							}
 					}
 			    }
-	    output_image.save("warped_image.png");	
+	    output_image.save("warped_image.png");
 	    }
 }
 	    // Question3/part2
-	    else {
-
-	    }	
-      }
     else
       throw std::string("unknown part!");
 
