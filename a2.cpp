@@ -208,7 +208,19 @@ bool inverse(CImg<float> A, CImg<float> inverseMat)
 
     return true;
 }
-
+CImg<double> getInverseTransformMatrix()
+{   CImg<double> inverseTransform(3, 3);    
+		inverseTransform(0, 0) = 0.907;
+		inverseTransform(0, 1) = 0.258;
+		inverseTransform(0, 2) =  -182;
+		inverseTransform(1, 0) =  -0.153;
+		inverseTransform(1, 1) =  1.44;
+		inverseTransform(1, 2) =  58;
+		inverseTransform(2, 0) = -0.000306;
+		inverseTransform(2, 1) = 0.000731;
+		inverseTransform(2, 2) = 1;
+		return inverseTransform;
+}
 
 int main(int argc, char **argv)
 {
@@ -516,59 +528,49 @@ int main(int argc, char **argv)
 
 			}
       }
-    else if(part == "part3")
-      {
-
-	// Inverse warping code
-      	//cout<<"yayy"<<endl;
-      	CImg<float> input_image(inputFile.c_str());
-      
-		int height = input_image.height();
-		int width = input_image.width();
-		//cout<< height<<endl;
-		//cout<< width<<endl;
-		//cout <<input_image.spectrum()<<endl;
-		CImg<double> output_image(width, height, 1, 3, 0.0); 
-		CImg<double> inverseTransform(3, 3); 
-		//cout <<input_image.spectrum()<<endl;
-		inverseTransform(0, 0) = 1.1246685805361205;
-		inverseTransform(0, 1) = -0.3146766039759572;
-		inverseTransform(0, 2) =  222.9409246881795;
-		//cout<< inverseTransform(0,2)<<endl;
-		inverseTransform(1, 0) =  0.10883905064150695;
-		inverseTransform(1, 1) =  0.6850586647407801;
-		inverseTransform(1, 2) =  -19.92469533821099;
-		//cout<< inverseTransform(1,2)<<endl;
-		inverseTransform(2, 0) = 0.0002645872396251113;
-		inverseTransform(2, 1) = -0.0005970689247421533;
-		inverseTransform(2, 2) = 1.0827848752468152;
-		
-		for (int i = 0; i < height; i++)
-		{  
-			for (int j = 0; j < width; j++)
-			{		
-
-				double x = inverseTransform(0, 0) * i + inverseTransform(0, 1) * j + inverseTransform(0, 2);
-				double y = inverseTransform(1, 0) * i + inverseTransform(1, 1) * j + inverseTransform(1, 2);
-				double z = inverseTransform(2, 0) * i + inverseTransform(2, 1) * j + inverseTransform(2, 2);
-				if (z>0){
-				x /= z;
-				y /= z;
-			     }
-				if (x>=0 && x<height && y>=0 && y<width) 
-	  			{
-
-
-				output_image(j, i, 0) = input_image(y, x, 0);
-				output_image(j, i, 1) = input_image(y, x, 1);
-				output_image(j, i, 2) = input_image(y, x, 2);
-				}
-			}
+        else if(part == "part3")
+      { // Question3/part1
+      	if (argc == 2){
+	  		CImg<float> input_image(inputFile.c_str());
+			int height = input_image.height();
+			int width = input_image.width();
+			CImg<double> output_image(width, height, 1, 3, 0.0); 
+			CImg<double> inverseTransform(3, 3); 
+			inverseTransform = getInverseTransformMatrix();
+			CImg<double> inverted(3, 3); 
+			inverted = inverseTransform.invert();
+			for (int i = 0; i < width; i++)
+				{  
+				for (int j = 0; j < height; j++)
+					{		
+						double x = inverted(0, 0) * i + inverted(0, 1) * j + inverted(0, 2);
+						double y = inverted(1, 0) * i + inverted(1, 1) * j + inverted(1, 2);
+						double z = inverted(2, 0) * i + inverted(2, 1) * j + inverted(2, 2);
+						if (z>0){
+							x /= z;
+							y /= z;
+			  				   }
+						if (x>=0 && x<width && y>=0 && y<height) 
+	  						{
+							output_image(i, j, 0) = input_image(x, y, 0);
+							output_image(i, j, 1) = input_image(x, y, 1);
+							output_image(i, j, 2) = input_image(x, y, 2);
+							}
+						else
+							{
+							output_image(i, j, 0) = 0.0;
+							output_image(i, j, 1) = 0.0;
+							output_image(i, j, 2) = 0.0;
+							}
+					}
+			    }
+	    output_image.save("warped_image.png");	
 	    }
-	    output_image.save("warped_image.png");
-		
+	    // Question3/part2
+	    else {
+
+	    }	
       }
-      
     else
       throw std::string("unknown part!");
 
