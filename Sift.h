@@ -109,7 +109,7 @@ class Sift
 
  protected:
   static const int octaves = 7, levels = 3, first = -1; 
-  static const float threshold = 0.04f / levels / 2.0f, edgeThreshold = 10.0f, magnif=3.0;
+  static constexpr float threshold = 0.04f / levels / 2.0f, edgeThreshold = 10.0f, magnif=3.0;
 
 };
 

@@ -105,7 +105,7 @@ int findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> image
 			//randPoints obj;
 			//obj = randPoints(1,2,3,4);
 			randomPoints->push_back(obj);
-			//finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
+			finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
 			}
 		}
 	}
@@ -150,7 +150,9 @@ vector<float> calculateHeuristicVector(SiftDescriptor desc){
 	vector<float> x(128);
 
 	//TODO generate X vector 128D from gaussian distribution
-
+    for(int j = 0; j < 128; j++){
+        x[j] = generateGaussianNoise(0.0, 1.0);
+    }
 	for(int i=0; i<kSize; i++){
 		for(int k=0; k<128; k++){
 			fV[i] += desc.descriptor[k]*x[k];
@@ -228,7 +230,7 @@ int main(int argc, char **argv)
 					int length = argc-3 ; //length of args
 					string inputFile_1 = argv[2];
 					CImg<double> query_image(inputFile_1.c_str());
-					cout<<length<<"length is"<<endl;
+					//cout<<length<<"length is"<<endl;
 					vector<SiftDescriptor> desc1 = calculateDescriptors(query_image, "A");
 
 					//start the for loop
@@ -247,6 +249,7 @@ int main(int argc, char **argv)
 					count = findBestMatchForImage(desc1, desc2, &finalImage, query_image.width(), &randomPoints);
 
 					countMap[count] =  argv[i+3]; //name of file;
+                    }
 
 					it = countMap.end();
 					it--;
@@ -254,12 +257,11 @@ int main(int argc, char **argv)
 					it1--;
 					for(it; it!=it1; it--)
 					{
-							cout<<"count order is"<<it->first<<endl;
+							//cout<<"count order is"<<it->first<<endl;
 							cout<<"image order is"<<it->second<<endl;
 					}
 
 			}
-		}
     else if(part == "part2")
       {
 
@@ -517,57 +519,8 @@ int main(int argc, char **argv)
 			}
     else if(part == "part3")
       {
-
-	// Inverse warping code
-      	//cout<<"yayy"<<endl;
-      	CImg<float> input_image(inputFile.c_str());
-      
-		int height = input_image.height();
-		int width = input_image.width();
-		//cout<< height<<endl;
-		//cout<< width<<endl;
-		//cout <<input_image.spectrum()<<endl;
-		CImg<double> output_image(width, height, 1, 3, 0.0); 
-		CImg<double> inverseTransform(3, 3); 
-		//cout <<input_image.spectrum()<<endl;
-		inverseTransform(0, 0) = 1.1246685805361205;
-		inverseTransform(0, 1) = -0.3146766039759572;
-		inverseTransform(0, 2) =  222.9409246881795;
-		//cout<< inverseTransform(0,2)<<endl;
-		inverseTransform(1, 0) =  0.10883905064150695;
-		inverseTransform(1, 1) =  0.6850586647407801;
-		inverseTransform(1, 2) =  -19.92469533821099;
-		//cout<< inverseTransform(1,2)<<endl;
-		inverseTransform(2, 0) = 0.0002645872396251113;
-		inverseTransform(2, 1) = -0.0005970689247421533;
-		inverseTransform(2, 2) = 1.0827848752468152;
-		
-		for (int i = 0; i < height; i++)
-		{  
-			for (int j = 0; j < width; j++)
-			{		
-
-				double x = inverseTransform(0, 0) * i + inverseTransform(0, 1) * j + inverseTransform(0, 2);
-				double y = inverseTransform(1, 0) * i + inverseTransform(1, 1) * j + inverseTransform(1, 2);
-				double z = inverseTransform(2, 0) * i + inverseTransform(2, 1) * j + inverseTransform(2, 2);
-				if (z>0){
-				x /= z;
-				y /= z;
-			     }
-				if (x>=0 && x<height && y>=0 && y<width) 
-	  			{
-
-
-				output_image(j, i, 0) = input_image(y, x, 0);
-				output_image(j, i, 1) = input_image(y, x, 1);
-				output_image(j, i, 2) = input_image(y, x, 2);
-				}
-			}
-	    }
-	    output_image.save("warped_image.png");
-		
+	// do something here!
       }
-      
     else
       throw std::string("unknown part!");
 
