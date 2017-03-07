@@ -74,6 +74,7 @@ int findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> image
 		//cout<<"indexNeighbour"<<indexNeighbor<<endl;
 		if(indexNeighbor != -1)
 		{
+            cout<<"inside count++"<<endl;
 			countNoOfMatches++;
 			randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
 			//randPoints obj;
@@ -116,6 +117,7 @@ vector<SiftDescriptor> calculateDescriptors(CImg<double> image, string inputFile
 int findBestMatchForImage(vector<SiftDescriptor> queryImage, vector<SiftDescriptor> inputImage, CImg<double>* finalImage, double imageSize, vector<randPoints>* randomPoints)
 {
     int countNoOfMatches = 0;
+    cout<<"before findMatches"<<endl;
     countNoOfMatches = findMatches(queryImage, inputImage, finalImage, imageSize, randomPoints, countNoOfMatches,true);
     //cout<<"inside bestMatches"<<countNoOfMatches<<endl;
     return countNoOfMatches;
@@ -455,7 +457,6 @@ int main(int argc, char **argv)
       {
 				// This is just a bit of sample code to get you started, to
 				// show how to use the SIFT library.
-				cout<<"Ishita"<<endl;
       			string inputFile_2 = argv[3];
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
@@ -478,48 +479,34 @@ int main(int argc, char **argv)
 			{
 
 					//create a map
-					map<int,vector<string>> countMap;
-					map<int,vector<string>>::const_iterator it;
-					map<int,vector<string>>::const_iterator it1;
+					map<int,string> countMap;
+					map<int,string>::const_iterator it;
+					map<int,string>::const_iterator it1;
 					int length = argc-3 ; //length of args
 					string inputFile_1 = argv[2];
 					CImg<double> query_image(inputFile_1.c_str());
-					cout<<length<<"length is"<<endl;
+					//cout<<length<<"length is"<<endl;
 					vector<SiftDescriptor> desc1 = calculateDescriptors(query_image, "A");
 
 					//start the for loop
 					for(int i = 0; i < length; i++)
 					{
-                    //cout<<i<<" inside for"<<endl;
 					string inputFile_match = argv[i+3];
-                    //cout<<"after reading file"<<endl;
 					CImg<double> input_image_2(inputFile_match.c_str());
-                    
+
 					CImg<double> finalImage = (query_image.get_append(input_image_2, 'x')).get_normalize(0, 255);
 
 
 					vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
-                   // cout<<"after calculating descriptors"<<endl;
+
 					vector<randPoints> randomPoints;
 					int count=0;
+                    cout<<"before calling best match"<<endl;
 					count = findBestMatchForImage(desc1, desc2, &finalImage, query_image.width(), &randomPoints);
-                    //cout<<"count is"<<count<<endl;
-                    if(countMap.find(count)==countMap.end())
-                    {
-                     vector<string> v;
-                     v.push_back(argv[i+3]);
-	   				 countMap[count] =  v; //name of file;
+
+					countMap[count] =  argv[i+3]; //name of file;
                     }
-                    else
-                    {
-                     vector<string> v = countMap[count];
-                     v.push_back(argv[i+3]);
-	   				 countMap[count] =  v; //name of file;
-                   // cout<<"for loop end"<<endl;
-                   }
-                    }
-                    
-                    //cout<<"after for"<<endl;
+
 					it = countMap.end();
 					it--;
 					it1 = countMap.begin();
@@ -527,12 +514,8 @@ int main(int argc, char **argv)
 					for(it; it!=it1; it--)
 					{
 							//cout<<"count order is"<<it->first<<endl;
-					    vector<string> images = it->second;
-                        for(int i = 0; i < images.size(); i++)
-                        {
-                            cout<<"image order is"<<it->second[i]<<endl;
-                        }
-				    }
+							cout<<"image order is"<<it->second<<endl;
+					}
 
 			}
     else if(part == "part2")
@@ -730,7 +713,7 @@ int main(int argc, char **argv)
 						errorDistance += sqrt(pow(translatedCoord(0, pointIndex) - origTranslatedPoints(0, pointIndex),2) + pow(translatedCoord(1,pointIndex) - origTranslatedPoints(1, pointIndex),2));
 						pointIndex++;
 					}
-					//cout<<"errorDist"<<errorDistance<<endl;
+					cout<<"errorDist"<<errorDistance<<endl;
 					//errorCal[errorDistance] = homography;
 					if(errorDistance < minErrorDist)
 					{
@@ -739,12 +722,12 @@ int main(int argc, char **argv)
 					}
 			}
 
-			//cout<<minErrorDist<<" min error"<<endl;
+			cout<<minErrorDist<<" min error"<<endl;
 
-			//for(int i=0; i<3; i++){
-			//	for(int j=0; j<3; j++){
-			//		cout<<minHomographyMatrix(i, j)<<endl;
-			//	}
+			for(int i=0; i<3; i++){
+				for(int j=0; j<3; j++){
+					cout<<minHomographyMatrix(i, j)<<endl;
+				}
 
 			CImg<float> finalTranslatedCoord(2, randomPoints.size());
 
@@ -760,12 +743,12 @@ int main(int argc, char **argv)
 				pointIndex++;
 			}
 
-			finalImage.get_normalize(0, 255).save("final_part2_1.png");
+			finalImage.get_normalize(0, 255).save("final_part2.png");
 
 
-      
+      }
 }
-			else if(part == "part2.2"){
+			else if(part == "rohil"){
 				string inputFile_2 = argv[3];
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
@@ -804,11 +787,7 @@ int main(int argc, char **argv)
 			inverseTransform = getInverseTransformMatrix();
 			CImg<double> inverted(3, 3); 
 			inverted = inverseTransform.invert();
-			int index = inputFile.find_last_of("/"); 
-			string filename = inputFile.substr(index+1);
-			int indexExt = filename.find_last_of(".");
-					
-			warpImage(inverted, input_image, filename.substr(0, indexExt));
+			warpImage(inverted, input_image, inputFile);
 	    }
 
 	    // Question3/part2
