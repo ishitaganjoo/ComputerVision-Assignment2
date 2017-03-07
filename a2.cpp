@@ -181,7 +181,19 @@ void matchHeuristicVectors(vector<float> heuristicImage1, SiftDescriptor image11
 
 	}
 }
-
+CImg<double> getInverseTransformMatrix()
+{   CImg<double> inverseTransform(3, 3);    
+		inverseTransform(0, 0) = 0.907;
+		inverseTransform(0, 1) = 0.258;
+		inverseTransform(0, 2) =  -182;
+		inverseTransform(1, 0) =  -0.153;
+		inverseTransform(1, 1) =  1.44;
+		inverseTransform(1, 2) =  58;
+		inverseTransform(2, 0) = -0.000306;
+		inverseTransform(2, 1) = 0.000731;
+		inverseTransform(2, 2) = 1;
+		return inverseTransform;
+}
 
 int main(int argc, char **argv)
 {
@@ -491,6 +503,7 @@ int main(int argc, char **argv)
 
 
       }
+<<<<<<< HEAD
 }
 			else if(part == "rohil"){
 
@@ -517,9 +530,49 @@ int main(int argc, char **argv)
 
 
 			}
-    else if(part == "part3")
-      {
-	// do something here!
+        else if(part == "part3")
+      { // Question3/part1
+      	if (argc == 2){
+	  		CImg<float> input_image(inputFile.c_str());
+			int height = input_image.height();
+			int width = input_image.width();
+			CImg<double> output_image(width, height, 1, 3, 0.0); 
+			CImg<double> inverseTransform(3, 3); 
+			inverseTransform = getInverseTransformMatrix();
+			CImg<double> inverted(3, 3); 
+			inverted = inverseTransform.invert();
+			for (int i = 0; i < width; i++)
+				{  
+				for (int j = 0; j < height; j++)
+					{		
+						double x = inverted(0, 0) * i + inverted(0, 1) * j + inverted(0, 2);
+						double y = inverted(1, 0) * i + inverted(1, 1) * j + inverted(1, 2);
+						double z = inverted(2, 0) * i + inverted(2, 1) * j + inverted(2, 2);
+						if (z>0){
+							x /= z;
+							y /= z;
+			  				   }
+						if (x>=0 && x<width && y>=0 && y<height) 
+	  						{
+							output_image(i, j, 0) = input_image(x, y, 0);
+							output_image(i, j, 1) = input_image(x, y, 1);
+							output_image(i, j, 2) = input_image(x, y, 2);
+							}
+						else
+							{
+							output_image(i, j, 0) = 0.0;
+							output_image(i, j, 1) = 0.0;
+							output_image(i, j, 2) = 0.0;
+							}
+					}
+			    }
+	    output_image.save("warped_image.png");	
+	    }
+}
+	    // Question3/part2
+	    else {
+
+	    }	
       }
     else
       throw std::string("unknown part!");
