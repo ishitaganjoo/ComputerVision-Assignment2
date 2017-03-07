@@ -75,12 +75,13 @@ int findMatches(vector<SiftDescriptor> imageDesc_1, vector<SiftDescriptor> image
 		if(indexNeighbor != -1)
 		{
 			countNoOfMatches++;
-			if(!checkFlow)
-      {
-       randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
+			randPoints obj = randPoints(imageDesc_1[i].col, imageDesc_1[i].row, imageDesc_2[indexNeighbor].col, imageDesc_2[indexNeighbor].row);
 			//randPoints obj;
 			//obj = randPoints(1,2,3,4);
 			randomPoints->push_back(obj);
+			if(!checkFlow)
+      		{
+       
 			finalImage->draw_line(imageDesc_1[i].col , imageDesc_1[i].row, imageDesc_2[indexNeighbor].col+imageSize, imageDesc_2[indexNeighbor].row, color);
 			}
 		}
@@ -188,6 +189,240 @@ void matchHeuristicVectors(vector<float> heuristicImage1, SiftDescriptor image11
 	}
 }
 
+
+// Calculate min homography matrix.
+CImg<float> calculateMinHomographyMatrix(vector<SiftDescriptor> desc1, vector<SiftDescriptor> desc2, int inputWidth)
+{		
+		
+        CImg<double> finalImage;
+		vector<randPoints> randomPoints;
+
+		findMatches(desc1, desc2, &finalImage, inputWidth, &randomPoints, 0, true);
+        
+		CImg<float> points(2, 4);
+		double minErrorDist = 100000000.0;
+		CImg<float> minHomographyMatrix(3,3);
+		for(int i = 0 ; i < 3; i++)
+			{
+			for(int j = 0; j < 3; j++)
+				{
+					minHomographyMatrix(i,j) = 0.0;
+				}
+			}
+			
+			for(int i=0 ; i<2000 ; i++)
+				{		
+					int firstRandDesc = rand() % randomPoints.size();
+					int secondRandDesc = rand() % randomPoints.size();
+					int thirdRandDesc = rand() % randomPoints.size();
+					int fourthRandDesc = rand() % randomPoints.size();
+
+					CImg<float> origTranslatedPoints(2, 4);
+					
+					float x1 = randomPoints[firstRandDesc]._x;
+					points(0, 0) = randomPoints[firstRandDesc]._x;
+					float y1 = randomPoints[firstRandDesc]._y;
+					points(1, 0) = randomPoints[firstRandDesc]._y;
+					float x1P = randomPoints[firstRandDesc]._xP;
+					origTranslatedPoints(0, 0) = randomPoints[firstRandDesc]._xP;
+					float y1P = randomPoints[firstRandDesc]._yP;
+					origTranslatedPoints(1, 0) = randomPoints[firstRandDesc]._yP;
+						
+					float x2 = randomPoints[secondRandDesc]._x;
+					points(0, 1) = randomPoints[secondRandDesc]._x;
+					float y2 = randomPoints[secondRandDesc]._y;
+					points(1, 1) = randomPoints[secondRandDesc]._y;
+					float x2P = randomPoints[secondRandDesc]._xP;
+					origTranslatedPoints(0, 1) = randomPoints[secondRandDesc]._xP;
+					float y2P = randomPoints[secondRandDesc]._yP;
+					origTranslatedPoints(1, 1) = randomPoints[secondRandDesc]._yP;
+					
+					float x3 = randomPoints[thirdRandDesc]._x;
+					points(0, 2) = randomPoints[thirdRandDesc]._x;
+					float y3 = randomPoints[thirdRandDesc]._y;
+					points(1, 2) = randomPoints[thirdRandDesc]._y;
+					float x3P = randomPoints[thirdRandDesc]._xP;
+					origTranslatedPoints(0, 2) = randomPoints[thirdRandDesc]._xP;
+					float y3P = randomPoints[thirdRandDesc]._yP;
+					origTranslatedPoints(1, 2) = randomPoints[thirdRandDesc]._yP;
+				
+					float x4 = randomPoints[fourthRandDesc]._x;
+					points(0, 3) = randomPoints[fourthRandDesc]._x;
+					float y4 = randomPoints[fourthRandDesc]._y;
+					points(1, 3) = randomPoints[fourthRandDesc]._y;
+					float x4P = randomPoints[fourthRandDesc]._xP;
+					origTranslatedPoints(0, 3) = randomPoints[fourthRandDesc]._xP;
+					float y4P = randomPoints[fourthRandDesc]._yP;
+					origTranslatedPoints(1, 3) = randomPoints[fourthRandDesc]._yP;	
+					CImg<float> array_2d(8,8);
+					for(int i=0; i<8; i++){
+						for(int j=0; j<8; j++){
+							if(i % 2 == 0){
+								if(j == 3 || j == 4 || j == 5){
+									array_2d(i, j) = 0;
+								}
+								if(j == 2){
+									array_2d(i, j) = 1;
+								}
+							}
+							if(i % 2 != 0){
+								if(j == 0 || j == 1 || j == 2){
+									array_2d(i, j) = 0;
+								}
+								if(j == 5){
+									array_2d(i, j) = 1;
+								}
+							}
+						}
+					}
+					
+					array_2d(0,0) = x1;
+					array_2d(0, 1) = y1;
+					array_2d(0, 6) = -(x1*x1P);
+					array_2d(0, 7) = -(y1*x1P);
+					array_2d(1, 3) = x1;
+					array_2d(1, 4) = y1;
+					array_2d(1, 6) = -(x1*y1P);
+					array_2d(1, 7) = -(y1*y1P);
+
+					array_2d(2,0) = x2;
+					array_2d(2, 1) = y2;
+					array_2d(2, 6) = -(x2*x2P);
+					array_2d(2, 7) = -(y2*x2P);
+					array_2d(3, 3) = x2;
+					array_2d(3, 4) = y2;
+					array_2d(3, 6) = -(x2*y2P);
+					array_2d(3, 7) = -(y2*y2P);
+
+					array_2d(4,0) = x3;
+					array_2d(4, 1) = y3;
+					array_2d(4, 6) = -(x3*x3P);
+					array_2d(4, 7) = -(y3*x3P);
+					array_2d(5, 3) = x3;
+					array_2d(5, 4) = y3;
+					array_2d(5, 6) = -(x3*y3P);
+					array_2d(5, 7) = -(y3*y3P);
+
+					array_2d(6,0) = x4;
+					array_2d(6, 1) = y4;
+					array_2d(6, 6) = -(x4*x4P);
+					array_2d(6, 7) = -(y4*x4P);
+					array_2d(7, 3) = x4;
+					array_2d(7, 4) = y4;
+					array_2d(7, 6) = -(x4*y4P);
+					array_2d(7, 7) = -(y4*y4P);
+
+					//float d = determinantOfMatrix(array_2d, 8);
+					CImg<float> inverseMat(8, 8);
+					//inverse(array_2d, inverseMat);
+					//cout<<"inverse mat"<<inverseMat(0,0)<<endl;
+					inverseMat = array_2d.invert();
+					//cout<<inverseMat(0,0)<<"invert"<<endl;
+
+					vector<float> transCoord(8);
+					transCoord[0] = x1P;
+					transCoord[1] = y1P;
+					transCoord[2] = x2P;
+					transCoord[3] = y2P;
+					transCoord[4] = x3P;
+					transCoord[5] = y3P;
+					transCoord[6] = x4P;
+					transCoord[7] = y4P;
+
+					vector<float> homography(9);
+					for(int i = 0 ; i < 9; i++)
+					{
+						homography[i] = 0.0;
+					}
+
+					for(int i=0; i<inverseMat.height(); i++){
+						for(int j=0; j<inverseMat.width(); j++){
+							homography[i] += inverseMat(i, j) * transCoord[j];
+						}
+					}
+					homography[8] = 1;
+					
+					CImg<float> homographyMatrix(3,3);
+					for(int i = 0 ; i < 3; i++)
+					{
+						for(int j = 0; j < 3; j++)
+						{
+							homographyMatrix(i,j) = 0.0;
+						}
+
+					}
+					int index = 0;
+					for(int i=0; i<3; i++){
+						for(int j=0; j<3; j++){
+							homographyMatrix(i, j) = homography[index];
+							index++;
+						}
+					}
+
+					CImg<float> translatedCoord(2, 4);
+
+					int pointIndex = 0;
+
+					while(pointIndex < 4){
+						translatedCoord(0, pointIndex) = homographyMatrix(0, 0)*points(0,pointIndex) + homographyMatrix(0, 1)*points(1, pointIndex) + homographyMatrix(0, 2);
+						translatedCoord(1, pointIndex) = homographyMatrix(1, 0)*points(0, pointIndex) + homographyMatrix(1, 1)*points(1, pointIndex) + homographyMatrix(1, 2);
+						pointIndex++;
+					}
+
+					double errorDistance = 0.0;
+
+					pointIndex = 0;
+					while(pointIndex < 4){
+						errorDistance += sqrt(pow(translatedCoord(0, pointIndex) - origTranslatedPoints(0, pointIndex),2) + pow(translatedCoord(1,pointIndex) - origTranslatedPoints(1, pointIndex),2));
+						pointIndex++;
+					}
+
+					if(errorDistance < minErrorDist)
+					{
+						minErrorDist = errorDistance;
+						minHomographyMatrix = homographyMatrix ;
+					}
+				}
+				
+				return minHomographyMatrix;
+}
+
+// Warp my image
+void warpImage(CImg<double> inverted, CImg<double> input_image, string filename)
+{
+	    int height = input_image.height();
+		int width = input_image.width();
+		CImg<double> output_image(width, height, 1, 3, 0.0); 
+        for (int i = 0; i < width; i++)
+				{  
+				for (int j = 0; j < height; j++)
+					{		
+						double x = inverted(0, 0) * i + inverted(0, 1) * j + inverted(0, 2);
+						double y = inverted(1, 0) * i + inverted(1, 1) * j + inverted(1, 2);
+						double z = inverted(2, 0) * i + inverted(2, 1) * j + inverted(2, 2);
+						if (z>0){
+							x /= z;
+							y /= z;
+			  				   }
+						if (x>=0 && x<width && y>=0 && y<height) 
+	  						{
+							output_image(i, j, 0) = input_image(x, y, 0);
+							output_image(i, j, 1) = input_image(x, y, 1);
+							output_image(i, j, 2) = input_image(x, y, 2);
+							}
+						else
+							{
+							output_image(i, j, 0) = 0.0;
+							output_image(i, j, 1) = 0.0;
+							output_image(i, j, 2) = 0.0;
+							}
+					}
+			    }
+		string name = filename+"-warped.png";		    
+	    output_image.save(name.c_str());	
+
+}
+
 CImg<double> getInverseTransformMatrix()
 {   CImg<double> inverseTransform(3, 3);
 		inverseTransform(0, 0) = 0.907;
@@ -215,13 +450,12 @@ int main(int argc, char **argv)
 
     string part = argv[1];
     string inputFile = argv[2];
-		string inputFile_2 = argv[3];
 
     if(part == "part1" && argc == 4)
       {
 				// This is just a bit of sample code to get you started, to
 				// show how to use the SIFT library.
-
+      			string inputFile_2 = argv[3];
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
 
@@ -283,7 +517,7 @@ int main(int argc, char **argv)
 			}
     else if(part == "part2")
       {
-
+      			string inputFile_2 = argv[3];
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
 
@@ -512,7 +746,7 @@ int main(int argc, char **argv)
       }
 }
 			else if(part == "rohil"){
-
+				string inputFile_2 = argv[3];
 				CImg<double> input_image(inputFile.c_str());
 				CImg<double> input_image_2(inputFile_2.c_str());
 
@@ -544,44 +778,43 @@ int main(int argc, char **argv)
 			}
         else if(part == "part3")
       { // Question3/part1
-      	if (argc == 2){
+      	if (argc == 3){
 	  		CImg<float> input_image(inputFile.c_str());
-			int height = input_image.height();
-			int width = input_image.width();
-			CImg<double> output_image(width, height, 1, 3, 0.0);
-			CImg<double> inverseTransform(3, 3);
+			CImg<double> inverseTransform(3, 3); 
 			inverseTransform = getInverseTransformMatrix();
-			CImg<double> inverted(3, 3);
+			CImg<double> inverted(3, 3); 
 			inverted = inverseTransform.invert();
-			for (int i = 0; i < width; i++)
-				{
-				for (int j = 0; j < height; j++)
-					{
-						double x = inverted(0, 0) * i + inverted(0, 1) * j + inverted(0, 2);
-						double y = inverted(1, 0) * i + inverted(1, 1) * j + inverted(1, 2);
-						double z = inverted(2, 0) * i + inverted(2, 1) * j + inverted(2, 2);
-						if (z>0){
-							x /= z;
-							y /= z;
-			  				   }
-						if (x>=0 && x<width && y>=0 && y<height)
-	  						{
-							output_image(i, j, 0) = input_image(x, y, 0);
-							output_image(i, j, 1) = input_image(x, y, 1);
-							output_image(i, j, 2) = input_image(x, y, 2);
-							}
-						else
-							{
-							output_image(i, j, 0) = 0.0;
-							output_image(i, j, 1) = 0.0;
-							output_image(i, j, 2) = 0.0;
-							}
-					}
-			    }
-	    output_image.save("warped_image.png");
+			warpImage(inverted, input_image, inputFile);
 	    }
-}
+
 	    // Question3/part2
+	    else  {
+	    	       //Iterate over the arguments
+	    			int length = argc-3 ; //length of args
+					string inputFile_1 = argv[2];
+					CImg<double> query_image(inputFile_1.c_str());
+					vector<SiftDescriptor> desc1 = calculateDescriptors(query_image, "A");
+					int inputWidth = query_image.width();
+					//start the for loop
+					for(int i = 0; i < length; i++)
+					{
+					string inputFileWarp = argv[i+3];
+					CImg<double> input_image_2(inputFileWarp.c_str());
+					vector<SiftDescriptor> desc2 = calculateDescriptors(input_image_2, "B");
+					//Calculate minimum homography matrix
+					CImg<float> minHomographyMatrix(3,3);
+					minHomographyMatrix = calculateMinHomographyMatrix(desc1, desc2, inputWidth);
+
+					CImg<float> minHomographyMatrixInvert(3,3);
+					minHomographyMatrixInvert = minHomographyMatrix.invert();
+					int index = inputFileWarp.find_last_of("/"); 
+					string filename = inputFileWarp.substr(index+1);
+					int indexExt = filename.find_last_of(".");
+					
+					warpImage(minHomographyMatrixInvert, input_image_2, filename.substr(0, indexExt));
+				}
+	    }	
+      }
     else
       throw std::string("unknown part!");
 
