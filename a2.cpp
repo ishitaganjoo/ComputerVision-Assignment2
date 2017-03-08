@@ -491,19 +491,28 @@ int main(int argc, char **argv)
 					it--;
 					it1 = countMap.begin();
 					it1--;
+					int check = 0;
+					bool found = false;
 					cout<<"Image order is"<<endl;
 					for(it; it!=it1; it--)
-					{
+					{	if (found)
+						break;
 					    vector<string> images = it->second;
 					    for(int i = 0; i < images.size(); i++)
-                        {	string name = it->second[i];
-                        	int index = name.find_last_of("/"); 
-							string filename = name.substr(index+1);
-							cout<<filename<<endl;
+	                        {	
+	                        	check++;
+	                        	if (check == 10)
+	                        	{
+	                        		found = true;
+	                        		break;
+	                        	}
+	                        	string name = it->second[i];
+	                        	int index = name.find_last_of("/"); 
+								string filename = name.substr(index+1);
+								cout<<filename<<endl;
+	                        }
                         }
-				    }
-
-			}
+				}
     else if(part == "part2")
       {
       			string inputFile_2 = argv[3];
