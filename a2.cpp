@@ -378,7 +378,7 @@ void warpImage(CImg<double> inverted, CImg<double> input_image, string filename)
 {
 	    int height = input_image.height();
 		int width = input_image.width();
-		CImg<double> output_image(width, height, 1, 3, 0.0); 
+		CImg<double> output_image(width, height, 1, 3, 255.0); 
         for (int i = 0; i < width; i++)
 				{  
 				for (int j = 0; j < height; j++)
@@ -398,9 +398,9 @@ void warpImage(CImg<double> inverted, CImg<double> input_image, string filename)
 							}
 						else
 							{
-							output_image(i, j, 0) = 0.0;
-							output_image(i, j, 1) = 0.0;
-							output_image(i, j, 2) = 0.0;
+							output_image(i, j, 0) = 255.0;
+							output_image(i, j, 1) = 255.0;
+							output_image(i, j, 2) = 255.0;
 							}
 					}
 			    }
